@@ -25,24 +25,29 @@ function App() {
 
   // Start live avatar session
   const handleStartSession = async () => {
+    const newTab = window.open("", "_blank");
+    if (newTab) {
+      newTab.document.write("<p>Loading session...</p>");
+    }
+
     try {
       setError(null);
       setLoading(true);
 
-      const res = await fetch(`${API_URL}/api/session`, {
-        method: "POST",
-      });
+      const res = await fetch(`${API_URL}/api/session`, { method: "POST" });
 
-      if (!res.ok) {
-        throw new Error("Failed to start session");
+      if (!res.ok) throw new Error("Failed to start session");
+
+      const data = await res.json();
+
+      if (newTab) {
+        newTab.location.href = data.meetUrl;
       }
-
-      const data: { meetUrl: string } = await res.json();
-
-      window.open(data.meetUrl, "_blank", "noopener,noreferrer");
     } catch (err) {
       console.error(err);
       setError("Unable to start session right now.");
+
+      if (newTab) newTab.close();
     } finally {
       setLoading(false);
     }
