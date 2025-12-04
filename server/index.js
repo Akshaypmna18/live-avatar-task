@@ -18,13 +18,15 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-async function generateIcebreaker() {
+// --- OpenAI: quote of the moment ---
+async function generateQuote() {
   try {
     const response = await openai.responses.create({
       model: "gpt-4o-mini",
       input:
-        "Write one short, casual watercooler question (max 15 words). Only return the question.",
+        "Give one short, positive quote for the day (max 18 words). Only return the quote text, nothing else.",
     });
+
     const firstOutput = response.output[0];
 
     if (
@@ -36,16 +38,26 @@ async function generateIcebreaker() {
       return firstOutput.content[0].text;
     }
 
-    // Fallback
-    return "So, how’s your day going so far?";
+    return "Take it one small step at a time today.";
   } catch (err) {
     console.error("OpenAI error:", err.message);
-    return "So, how’s your day going so far?";
+    return "Take it one small step at a time today.";
   }
 }
 
 app.get("/", (req, res) => {
   res.send("Live Avatar backend is running ✅");
+});
+
+// --- GET /api/quote: return quote for the UI ---
+app.get("/api/quote", async (req, res) => {
+  try {
+    const quote = await generateQuote();
+    res.json({ quote });
+  } catch (err) {
+    console.error("Quote error:", err.message);
+    res.status(500).json({ quote: "Stay positive and keep going!" });
+  }
 });
 
 // --- MAIN ROUTE: create session + return LiveKit meet URL ---
@@ -103,11 +115,8 @@ app.post("/api/session", async (req, res) => {
       livekitUrl
     )}&token=${encodeURIComponent(livekitToken)}`;
 
-    // 4) Get optional OpenAI-generated icebreaker
-    const icebreaker = await generateIcebreaker();
-
     // Send back to frontend
-    res.json({ meetUrl, icebreaker });
+    res.json({ meetUrl });
   } catch (err) {
     console.error(
       "LiveAvatar error:",
